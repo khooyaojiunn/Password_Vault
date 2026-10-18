@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+
+    <!-- Tests app icon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="./apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="./apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="./apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="./apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="./apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="./apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="./apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="./android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="./favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="./ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <!-- PWA & Mobile Web App Capabilities -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>Password Vault PWA</title>
+    <!-- Tailwind CSS with media dark mode support -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Mobile safe area padding for notch & home indicator */
+        .pt-safe {
+            padding-top: max(1rem, env(safe-area-inset-top));
+        }
+        .pb-safe {
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        .mb-safe-bottom {
+            margin-bottom: env(safe-area-inset-bottom);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased select-none transition-colors duration-200">
+
+    <!-- MASTER LOCK OVERLAY (APP UNLOCK / INITIAL SETUP) -->
+    <div id="lockScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 px-6 pt-safe pb-safe transition-opacity duration-300">
+        <div class="w-full max-w-sm flex flex-col items-center text-center">
+            <div class="w-20 h-20 rounded-3xl bg-blue-600/20 text-blue-600 dark:text-blue-500 flex items-center justify-center text-3xl mb-4 border border-blue-500/30 shadow-lg shadow-blue-500/10">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mb-1">Password Vault</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6" id="lockSubtitle">Enter your App Unlock Password to access the application UI.</p>
+
+            <form id="lockForm" class="w-full space-y-4">
+                <!-- App Unlock Password -->
+                <div class="relative">
+                    <input type="password" id="masterPasswordInput" required placeholder="App Unlock Password" 
+                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-2xl px-4 py-3.5 pl-11 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
+                    <button type="button" onclick="togglePasswordVisibility('masterPasswordInput', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div id="confirmPasswordGroup" class="relative hidden">
+                    <input type="password" id="confirmMasterPasswordInput" placeholder="Confirm App Unlock Password" 
+                        class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-2xl px-4 py-3.5 pl-11 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    <i class="fa-solid fa-check-double absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
+                </div>
+
+                <!-- Setup Fields for Vault Key (First time setup only) -->
+                <div id="setupVaultGroup" class="space-y-4 hidden text-left border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                    <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Vault Encryption Password</p>
+                    <div class="relative">
+                        <input type="password" id="vaultPasswordInput" placeholder="Vault Encryption Password" 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-2xl px-4 py-3.5 pl-11 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <i class="fa-solid fa-lock-keyhole absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
+                        <button type="button" onclick="togglePasswordVisibility('vaultPasswordInput', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="confirmVaultPasswordInput" placeholder="Confirm Vault Password" 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-2xl px-4 py-3.5 pl-11 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <i class="fa-solid fa-check-double absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
+                    </div>
+                </div>
+
+                <button type="submit" id="unlockBtn" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg shadow-blue-600/25 transition">
+                    Unlock UI
+                </button>
+            </form>
+            <p id="lockError" class="text-red-500 dark:text-red-400 text-xs mt-3 hidden"></p>
+        </div>
+    </div>
+
+    <!-- VAULT DECRYPTION PROMPT MODAL -->
+    <div id="vaultUnlockModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-4">
+            <div class="flex items-center gap-3 text-blue-600 dark:text-blue-400">
+                <i class="fa-solid fa-vault text-2xl"></i>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Decrypt Vault Session</h3>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Enter your distinct Vault Encryption Password to access or modify encrypted credentials.</p>
+
+            <form onsubmit="unlockVaultSession(event)" class="space-y-3">
+                <div class="relative">
+                    <input type="password" id="vaultSessionPass" required placeholder="Vault Encryption Password" 
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    <button type="button" onclick="togglePasswordVisibility('vaultSessionPass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p id="vaultSessionError" class="text-red-500 text-xs hidden"></p>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeVaultSessionModal()" class="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold py-2.5 rounded-xl text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-500">
+                        Decrypt Vault
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ENCRYPTED IMPORT PASSWORD MODAL -->
+    <div id="importDecryptModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-4">
+            <div class="flex items-center gap-3 text-blue-600 dark:text-blue-400">
+                <i class="fa-solid fa-key text-2xl"></i>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Decrypt Import Backup</h3>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Enter the backup file password to decrypt and restore credentials.</p>
+
+            <form onsubmit="confirmEncryptedImport(event)" class="space-y-3">
+                <div class="relative">
+                    <input type="password" id="importFilePass" required placeholder="Backup File Password" 
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    <button type="button" onclick="togglePasswordVisibility('importFilePass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p id="importDecryptError" class="text-red-500 text-xs hidden"></p>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeImportDecryptModal()" class="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold py-2.5 rounded-xl text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-500">
+                        Import & Restore
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT CREDENTIAL MODAL -->
+    <div id="editCredentialModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-500 dark:text-blue-400"></i> Edit Credential
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="editCredentialForm" onsubmit="saveEditedCredential(event)" class="space-y-3">
+                <input type="hidden" id="modalEntryKey">
+                <input type="hidden" id="modalEntryCreatedAt">
+
+                <!-- Read-Only UID Indicator -->
+                <div class="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs">
+                    <span class="text-slate-500 dark:text-slate-400 font-medium">Unique ID (UID)</span>
+                    <span id="modalUidText" class="font-mono text-blue-600 dark:text-blue-400 font-semibold"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Title / Service Name *</label>
+                    <input type="text" id="modalEntryTitle" required 
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Username / Email *</label>
+                        <input type="text" id="modalEntryUsername" required 
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                        <select id="modalEntryCategory" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                            <!-- Dynamic options -->
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Password *</label>
+                    <div class="relative">
+                        <input type="password" id="modalEntryPassword" required 
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                        <button type="button" onclick="togglePasswordVisibility('modalEntryPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Website URL</label>
+                    <input type="url" id="modalEntryUrl" 
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Notes / Security Questions</label>
+                    <textarea id="modalEntryNotes" rows="2" 
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold py-2.5 rounded-xl text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-500">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="appContainer" class="flex-1 flex flex-col h-full overflow-hidden opacity-0 transition-opacity duration-300">
+        
+        <!-- DARK TOP HEADER BAR -->
+        <header class="bg-slate-900 border-b border-slate-800 px-4 pt-safe pb-3 flex flex-col gap-2 shrink-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-base border border-blue-500/20">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <span class="font-bold text-lg text-white tracking-tight">Password Vault</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="vaultStatusBadge" onclick="promptVaultUnlock()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-pointer">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <span id="vaultBadgeText">Vault Locked</span>
+                    </button>
+                    <button onclick="lockAppUI()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95" title="Lock App UI">
+                        <i class="fa-solid fa-lock"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Search Bar -->
+            <div id="headerSearchWrapper" class="relative mt-1">
+                <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search passwords, accounts, notes..." 
+                    class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl py-2 pl-9 pr-8 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500"></i>
+                <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN DYNAMIC CONTENT AREA -->
+        <main id="contentArea" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            
+            <!-- TAB 1: ADD / EDIT -->
+            <section id="tab-add" class="tab-content hidden max-w-lg mx-auto pb-12">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="formTitle">Add New Credential</h2>
+                    <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white underline">Cancel Edit</button>
+                </div>
+
+                <form id="credentialForm" class="space-y-4" onsubmit="saveCredential(event)">
+                    <input type="hidden" id="entryKey">
+                    <input type="hidden" id="entryUid">
+                    <input type="hidden" id="entryCreatedAt">
+
+                    <!-- Read-Only UID Indicator -->
+                    <div id="uidDisplayGroup" class="hidden bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs">
+                        <span class="text-slate-500 dark:text-slate-400 font-medium">Unique ID (UID)</span>
+                        <div class="flex items-center gap-2">
+                            <span id="uidText" class="font-mono text-blue-600 dark:text-blue-400 font-semibold"></span>
+                            <button type="button" onclick="copyToClipboard(document.getElementById('uidText').textContent, 'UID')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Title / Service Name *</label>
+                        <input type="text" id="entryTitle" required placeholder="e.g. Google, Netflix, Bank Account" 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Username / Email *</label>
+                            <input type="text" id="entryUsername" required placeholder="user@domain.com" 
+                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                            <select id="entryCategory" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                                <!-- Dynamic options -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Password *</label>
+                            <button type="button" onclick="openGeneratorModal()" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="entryPassword" required placeholder="Enter or generate password" 
+                                class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                            <button type="button" onclick="togglePasswordVisibility('entryPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Website URL</label>
+                        <input type="url" id="entryUrl" placeholder="https://example.com" 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Notes / Security Questions</label>
+                        <textarea id="entryNotes" rows="3" placeholder="Additional notes, recovery codes, pin numbers..." 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Entry</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- TAB 2: LIST -->
+            <section id="tab-list" class="tab-content hidden max-w-lg mx-auto pb-12">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Saved Vault</h2>
+                    <span id="vaultCountTag" class="text-xs text-slate-500 dark:text-slate-400">0 items</span>
+                </div>
+
+                <!-- Category Pills Filter -->
+                <div id="categoryFilterContainer" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-3">
+                    <!-- Dynamic Pill Filters -->
+                </div>
+
+                <div id="credentialsList" class="space-y-3">
+                    <!-- Dynamic Credential Cards -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyVaultState" class="hidden flex-col items-center justify-center py-12 text-center">
+                    <div class="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 dark:text-slate-500 text-2xl mb-3">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">No Credentials Found</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-500 mt-1 max-w-xs">Start building your vault by clicking the Add tab below.</p>
+                </div>
+            </section>
+
+            <!-- TAB 3: CATEGORIES -->
+            <section id="tab-categories" class="tab-content hidden max-w-lg mx-auto pb-12 space-y-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Categories</h2>
+
+                <form onsubmit="addCategory(event)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3 shadow-sm dark:shadow-none">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Add New Category</h3>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Category Name *</label>
+                        <input type="text" id="newCategoryInput" required placeholder="e.g. Travel, Finance" 
+                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <!-- Icon Picker Selection -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Select Icon</label>
+                        <input type="hidden" id="selectedCategoryIcon" value="fa-folder">
+                        
+                        <div class="flex items-center gap-3 mb-2 p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg border border-blue-500/20" id="liveIconPreviewContainer">
+                                <i id="liveIconPreview" class="fa-solid fa-folder"></i>
+                            </div>
+                            <div class="text-xs">
+                                <span class="font-medium text-slate-700 dark:text-slate-300">Live Preview</span>
+                                <p class="text-[10px] text-slate-400" id="selectedIconNameText">fa-folder</p>
+                            </div>
+                        </div>
+
+                        <!-- Icon Grid Picker -->
+                        <div class="grid grid-cols-6 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
+                            <button type="button" onclick="selectCategoryIcon('fa-folder', this)" class="icon-option-btn p-2 rounded-xl bg-blue-600 text-white flex items-center justify-center text-base transition hover:bg-blue-500" data-icon="fa-folder"><i class="fa-solid fa-folder"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-user', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-user"><i class="fa-solid fa-user"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-briefcase', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-briefcase"><i class="fa-solid fa-briefcase"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-share-nodes', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-share-nodes"><i class="fa-solid fa-share-nodes"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-landmark', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-landmark"><i class="fa-solid fa-landmark"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-utensils', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-utensils"><i class="fa-solid fa-utensils"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-car', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-car"><i class="fa-solid fa-car"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-bag-shopping', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-bag-shopping"><i class="fa-solid fa-bag-shopping"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-file-invoice-dollar', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-file-invoice-dollar"><i class="fa-solid fa-file-invoice-dollar"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-gamepad', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-gamepad"><i class="fa-solid fa-gamepad"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-heart-pulse', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-heart-pulse"><i class="fa-solid fa-heart-pulse"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-microchip', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-microchip"><i class="fa-solid fa-microchip"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-paw', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-paw"><i class="fa-solid fa-paw"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-plane', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-plane"><i class="fa-solid fa-plane"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-graduation-cap', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-graduation-cap"><i class="fa-solid fa-graduation-cap"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-house', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-house"><i class="fa-solid fa-house"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-key', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-key"><i class="fa-solid fa-key"></i></button>
+                            <button type="button" onclick="selectCategoryIcon('fa-shield', this)" class="icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700" data-icon="fa-shield"><i class="fa-solid fa-shield"></i></button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-xl text-white font-medium text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-blue-600/20">
+                        <i class="fa-solid fa-plus"></i> Save Category
+                    </button>
+                </form>
+
+                <div id="categoriesList" class="space-y-2">
+                    <!-- Dynamic Categories -->
+                </div>
+            </section>
+
+            <!-- TAB 4: DATA SYNC -->
+            <section id="tab-sync" class="tab-content hidden max-w-lg mx-auto pb-12 space-y-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Data Management & Backup</h2>
+
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3 shadow-sm dark:shadow-none">
+                    <div class="flex items-center gap-3 text-blue-600 dark:text-blue-400">
+                        <i class="fa-solid fa-file-export text-xl"></i>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Export Vault Backup</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Download your encrypted or unencrypted vault file.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="exportVault('json')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-code"></i> JSON Export
+                        </button>
+                        <button onclick="exportVault('encrypted')" class="bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-lock"></i> Encrypted File
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3 shadow-sm dark:shadow-none">
+                    <div class="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-file-import text-xl"></i>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Import Vault Backup</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Restore credentials from unencrypted or encrypted JSON backups.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 pt-1">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Plain JSON Backup</label>
+                            <input type="file" id="importFileInput" accept=".json,.vault" onchange="importVault(event)" class="block w-full text-xs text-slate-500 dark:text-slate-400
+                              file:mr-3 file:py-2 file:px-3.5
+                              file:rounded-xl file:border-0
+                              file:text-xs file:font-semibold
+                              file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-200
+                              hover:file:bg-slate-200 dark:hover:file:bg-slate-700
+                              cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Encrypted JSON Backup</label>
+                            <input type="file" id="importEncryptedFileInput" accept=".json,.vault" onchange="triggerEncryptedJsonImport(event)" class="hidden">
+                            <button onclick="document.getElementById('importEncryptedFileInput').click()" class="w-full bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-file-shield"></i> Import Encrypted JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Danger Zone</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Permanently delete local database or reset credentials.</p>
+                        </div>
+                    </div>
+                    <button onclick="clearAllVaultData()" class="w-full bg-red-600/10 dark:bg-red-600/20 hover:bg-red-600/20 dark:hover:bg-red-600/30 border border-red-500/30 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-xl py-2.5 text-xs font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Clear Local Vault Data
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800/80 px-2 py-2 pb-safe shrink-0 transition-colors duration-200">
+            <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+                <button onclick="switchTab('add')" id="nav-add" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                    <i class="fa-solid fa-plus-circle text-base mb-1"></i>
+                    <span>Add</span>
+                </button>
+                <button onclick="switchTab('list')" id="nav-list" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                    <i class="fa-solid fa-list text-base mb-1"></i>
+                    <span>List</span>
+                </button>
+                <button onclick="switchTab('categories')" id="nav-categories" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                    <i class="fa-solid fa-folder text-base mb-1"></i>
+                    <span>Categories</span>
+                </button>
+                <button onclick="switchTab('sync')" id="nav-sync" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                    <i class="fa-solid fa-sync-alt text-base mb-1"></i>
+                    <span>Data Sync</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- PASSWORD GENERATOR MODAL -->
+    <div id="generatorModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center hidden p-0 sm:p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 animate-in slide-in-from-bottom">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-blue-500 dark:text-blue-400"></i> Generator
+                </h3>
+                <button onclick="closeGeneratorModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between gap-2">
+                <span id="genResult" class="font-mono text-sm tracking-wide text-emerald-600 dark:text-emerald-400 break-all select-all">Select options...</span>
+                <button onclick="copyGeneratedPassword()" class="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg bg-slate-200 dark:bg-slate-800/50">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <div class="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        <span>Length</span>
+                        <span id="genLengthVal" class="text-blue-600 dark:text-blue-400">16</span>
+                    </div>
+                    <input type="range" id="genLength" min="8" max="32" value="16" oninput="updateGenerator()" class="w-full accent-blue-500 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-lg">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" id="genUppercase" checked onchange="updateGenerator()" class="rounded border-slate-300 text-blue-600 focus:ring-0">
+                        <span>Uppercase (A-Z)</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" id="genLowercase" checked onchange="updateGenerator()" class="rounded border-slate-300 text-blue-600 focus:ring-0">
+                        <span>Lowercase (a-z)</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" id="genNumbers" checked onchange="updateGenerator()" class="rounded border-slate-300 text-blue-600 focus:ring-0">
+                        <span>Numbers (0-9)</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" id="genSymbols" checked onchange="updateGenerator()" class="rounded border-slate-300 text-blue-600 focus:ring-0">
+                        <span>Symbols (!@#$)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="updateGenerator()" class="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold py-2.5 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+                </button>
+                <button onclick="applyGeneratedPassword()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+                    Use Password
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 dark:bg-slate-800 text-white border border-slate-700 text-xs font-medium px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">Action performed</span>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        /* ==========================================================================
+           1. PWA Dynamic Manifest & Service Worker Registration
+           ========================================================================== */
+        const manifestData = {
+            name: "Password Vault",
+            short_name: "Vault",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#020617",
+            theme_color: "#0f172a",
+            icons: [{
+                src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232563eb'/><path fill='%23ffffff' d='M256 48a208 208 0 1 0 208 208 A208 208 0 0 0 256 48zm0 112a48 48 0 1 1 -48 48 48 48 0 0 1 48-48zm48 208H208v-32h96z'/></svg>",
+                sizes: "512x512",
+                type: "image/svg+xml"
+            }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        const linkElem = document.createElement('link');
+        linkElem.rel = 'manifest';
+        linkElem.href = manifestUrl;
+        document.head.appendChild(linkElem);
+
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'vault-cache-v1';
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(
+                        caches.match(e.request).then((res) => res || fetch(e.request).catch(() => caches.match(e.request)))
+                    );
+                });
+            `;
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(swBlob);
+            navigator.serviceWorker.register(swUrl).catch(err => console.log('SW note:', err));
+        }
+
+        /* ==========================================================================
+           2. IndexedDB & Dual-Key Web Crypto Operations (passwordDB v1)
+           ========================================================================== */
+        const DB_NAME = 'passwordDB';
+        const DB_VERSION = 1;
+        let db = null;
+        
+        let isAppUnlocked = false;
+        let masterCryptoKey = null;
+
+        let currentActiveTab = 'list';
+        let activeCategoryFilter = 'All';
+        let searchQuery = '';
+        let pendingImportData = null;
+        let pendingImportKey = null;
+
+        const defaultCategories = [
+            { name: 'Personal', icon: 'fa-user' },
+            { name: 'Work', icon: 'fa-briefcase' },
+            { name: 'Social', icon: 'fa-share-nodes' },
+            { name: 'Banking', icon: 'fa-landmark' },
+            { name: 'Custom', icon: 'fa-folder' }
+        ];
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains('credentials')) {
+                        database.createObjectStore('credentials', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!database.objectStoreNames.contains('categories')) {
+                        database.createObjectStore('categories', { keyPath: 'name' });
+                    }
+                    if (!database.objectStoreNames.contains('settings')) {
+                        database.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                request.onerror = () => reject('Failed to open IndexedDB');
+            });
+        }
+
+        function parseToUint8Array(input) {
+            if (!input) return new Uint8Array(16);
+            if (input instanceof Uint8Array) return input;
+            if (Array.isArray(input)) return new Uint8Array(input);
+            if (typeof input === 'string') {
+                try {
+                    const binary = atob(input);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        bytes[i] = binary.charCodeAt(i);
+                    }
+                    return bytes;
+                } catch (e) {
+                    return new TextEncoder().encode(input);
+                }
+            }
+            if (typeof input === 'object') {
+                const keys = Object.keys(input).filter(k => !isNaN(k)).sort((a, b) => Number(a) - Number(b));
+                if (keys.length > 0) {
+                    const arr = new Uint8Array(keys.length);
+                    for (let i = 0; i < keys.length; i++) {
+                        arr[i] = input[keys[i]];
+                    }
+                    return arr;
+                }
+            }
+            return new Uint8Array(16);
+        }
+
+        async function hashPassword(password, salt) {
+            const enc = new TextEncoder();
+            const saltBytes = parseToUint8Array(salt);
+            const passBytes = enc.encode(password);
+            const combined = new Uint8Array(saltBytes.length + passBytes.length);
+            combined.set(saltBytes);
+            combined.set(passBytes, saltBytes.length);
+            
+            const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+            return Array.from(new Uint8Array(hashBuffer));
+        }
+
+        async function deriveVaultKey(vaultPassword, salt) {
+            const enc = new TextEncoder();
+            const saltBytes = parseToUint8Array(salt);
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw", enc.encode(vaultPassword), "PBKDF2", false, ["deriveKey"]
+            );
+            return crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: saltBytes,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptText(text, key) {
+            const enc = new TextEncoder();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                enc.encode(text)
+            );
+            return {
+                ciphertext: Array.from(new Uint8Array(encrypted)),
+                iv: Array.from(iv)
+            };
+        }
+
+        async function decryptText(encryptedObj, key) {
+            if (!key || !encryptedObj) return null;
+            if (typeof encryptedObj === 'string') return encryptedObj;
+            try {
+                const dec = new TextDecoder();
+                const ciphertext = parseToUint8Array(encryptedObj.ciphertext !== undefined ? encryptedObj.ciphertext : encryptedObj);
+                const iv = parseToUint8Array(encryptedObj.iv);
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    ciphertext
+                );
+                return dec.decode(decrypted);
+            } catch (err) {
+                return null;
+            }
+        }
+
+        /* ==========================================================================
+           3. Dual-Auth Initialization & Lock Logic
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', async () => {
+            await openDB();
+            checkAppAuthState();
+        });
+
+        async function checkAppAuthState() {
+            const tx = db.transaction('settings', 'readonly');
+            const store = tx.objectStore('settings');
+            const reqApp = store.get('appAuth');
+
+            reqApp.onsuccess = () => {
+                const appAuth = reqApp.result;
+                const confirmGroup = document.getElementById('confirmPasswordGroup');
+                const setupVaultGroup = document.getElementById('setupVaultGroup');
+                const lockSubtitle = document.getElementById('lockSubtitle');
+                const unlockBtn = document.getElementById('unlockBtn');
+
+                if (!appAuth) {
+                    confirmGroup.classList.remove('hidden');
+                    document.getElementById('confirmMasterPasswordInput').required = true;
+                    
+                    setupVaultGroup.classList.remove('hidden');
+                    document.getElementById('vaultPasswordInput').required = true;
+                    document.getElementById('confirmVaultPasswordInput').required = true;
+
+                    lockSubtitle.textContent = 'Set up separate passwords for App Unlock and Vault Encryption.';
+                    unlockBtn.textContent = 'Initialize Vault Security';
+                } else {
+                    confirmGroup.classList.add('hidden');
+                    document.getElementById('confirmMasterPasswordInput').required = false;
+
+                    setupVaultGroup.classList.add('hidden');
+                    document.getElementById('vaultPasswordInput').required = false;
+                    document.getElementById('confirmVaultPasswordInput').required = false;
+
+                    lockSubtitle.textContent = 'Enter your App Unlock Password to access the application UI.';
+                    unlockBtn.textContent = 'Unlock UI';
+                }
+            };
+        }
+
+        document.getElementById('lockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const appPass = document.getElementById('masterPasswordInput').value;
+            const confirmAppPass = document.getElementById('confirmMasterPasswordInput').value;
+            const vaultPass = document.getElementById('vaultPasswordInput').value;
+            const confirmVaultPass = document.getElementById('confirmVaultPasswordInput').value;
+
+            const errElem = document.getElementById('lockError');
+            errElem.classList.add('hidden');
+
+            const tx = db.transaction('settings', 'readwrite');
+            const store = tx.objectStore('settings');
+            const req = store.get('appAuth');
+
+            req.onsuccess = async () => {
+                const existingAuth = req.result;
+                if (!existingAuth) {
+                    if (appPass !== confirmAppPass) {
+                        showLockError("App Unlock Passwords do not match.");
+                        return;
+                    }
+                    if (!vaultPass || vaultPass !== confirmVaultPass) {
+                        showLockError("Vault Encryption Passwords do not match.");
+                        return;
+                    }
+
+                    const appSalt = crypto.getRandomValues(new Uint8Array(16));
+                    const appHash = await hashPassword(appPass, appSalt);
+
+                    const vaultSalt = crypto.getRandomValues(new Uint8Array(16));
+                    const derivedVaultKey = await deriveVaultKey(vaultPass, vaultSalt);
+                    const vaultVerifier = await encryptText("VERIFIED_VAULT_KEY", derivedVaultKey);
+
+                    const saveTx = db.transaction(['settings', 'categories'], 'readwrite');
+                    saveTx.objectStore('settings').put({
+                        key: 'appAuth',
+                        salt: Array.from(appSalt),
+                        hash: appHash
+                    });
+                    saveTx.objectStore('settings').put({
+                        key: 'vaultAuth',
+                        salt: Array.from(vaultSalt),
+                        verifier: vaultVerifier
+                    });
+
+                    const catStore = saveTx.objectStore('categories');
+                    defaultCategories.forEach(cat => catStore.put(cat));
+
+                    isAppUnlocked = true;
+                    masterCryptoKey = derivedVaultKey;
+                    unlockAppUI();
+                } else {
+                    const appSalt = parseToUint8Array(existingAuth.salt);
+                    const attemptedHash = await hashPassword(appPass, appSalt);
+
+                    const isMatch = attemptedHash.length === existingAuth.hash.length &&
+                        attemptedHash.every((val, idx) => val === existingAuth.hash[idx]);
+
+                    if (isMatch) {
+                        isAppUnlocked = true;
+                        unlockAppUI();
+                    } else {
+                        showLockError("Incorrect App Unlock Password.");
+                    }
+                }
+            };
+        });
+
+        function showLockError(msg) {
+            const errElem = document.getElementById('lockError');
+            errElem.textContent = msg;
+            errElem.classList.remove('hidden');
+        }
+
+        function unlockAppUI() {
+            document.getElementById('lockScreen').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('appContainer').classList.remove('opacity-0');
+            setTimeout(() => {
+                document.getElementById('lockScreen').classList.add('hidden');
+            }, 300);
+
+            updateVaultBadgeStatus();
+            switchTab('list');
+            loadCategoriesSelect();
+            renderCategoryPills();
+        }
+
+        function lockAppUI() {
+            isAppUnlocked = false;
+            masterCryptoKey = null;
+            document.getElementById('masterPasswordInput').value = '';
+            document.getElementById('confirmMasterPasswordInput').value = '';
+            document.getElementById('vaultPasswordInput').value = '';
+            document.getElementById('confirmVaultPasswordInput').value = '';
+            
+            document.getElementById('lockScreen').classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            document.getElementById('appContainer').classList.add('opacity-0');
+            showToast("App Locked");
+        }
+
+        /* ==========================================================================
+           4. Vault Session Unlock Modal
+           ========================================================================== */
+        function updateVaultBadgeStatus() {
+            const badge = document.getElementById('vaultStatusBadge');
+            const badgeText = document.getElementById('vaultBadgeText');
+
+            if (masterCryptoKey) {
+                badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-pointer";
+                badgeText.textContent = "Vault Unlocked";
+            } else {
+                badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-pointer";
+                badgeText.textContent = "Vault Locked";
+            }
+        }
+
+        function promptVaultUnlock(onSuccessCallback = null) {
+            if (masterCryptoKey) {
+                if (onSuccessCallback) onSuccessCallback();
+                return;
+            }
+            const modal = document.getElementById('vaultUnlockModal');
+            document.getElementById('vaultSessionPass').value = '';
+            document.getElementById('vaultSessionError').classList.add('hidden');
+            modal.classList.remove('hidden');
+            window._pendingVaultCallback = onSuccessCallback;
+        }
+
+        function closeVaultSessionModal() {
+            document.getElementById('vaultUnlockModal').classList.add('hidden');
+            window._pendingVaultCallback = null;
+        }
+
+        async function unlockVaultSession(e) {
+            e.preventDefault();
+            const pass = document.getElementById('vaultSessionPass').value;
+            const errElem = document.getElementById('vaultSessionError');
+            errElem.classList.add('hidden');
+
+            const tx = db.transaction('settings', 'readonly');
+            const req = tx.objectStore('settings').get('vaultAuth');
+
+            req.onsuccess = async () => {
+                const res = req.result;
+                if (!res) return;
+
+                const salt = parseToUint8Array(res.salt);
+                const derived = await deriveVaultKey(pass, salt);
+                const checkDecrypted = await decryptText(res.verifier, derived);
+
+                if (checkDecrypted === "VERIFIED_VAULT_KEY") {
+                    masterCryptoKey = derived;
+                    updateVaultBadgeStatus();
+                    closeVaultSessionModal();
+                    showToast("Vault Decrypted");
+                    
+                    if (window._pendingVaultCallback) {
+                        window._pendingVaultCallback();
+                    } else {
+                        renderCredentialsList();
+                    }
+                } else {
+                    errElem.textContent = "Incorrect Vault Encryption Password.";
+                    errElem.classList.remove('hidden');
+                }
+            };
+        }
+
+        /* ==========================================================================
+           5. Tab Navigation & UI Controls
+           ========================================================================== */
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'dark:text-blue-400');
+                btn.classList.add('text-slate-500', 'dark:text-slate-400');
+            });
+
+            const activeContent = document.getElementById(`tab-${tabId}`);
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeContent) activeContent.classList.remove('hidden');
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-500', 'dark:text-slate-400');
+                activeNav.classList.add('text-blue-600', 'dark:text-blue-400');
+            }
+
+            const searchWrapper = document.getElementById('headerSearchWrapper');
+            if (tabId === 'list') {
+                searchWrapper.classList.remove('hidden');
+            } else {
+                searchWrapper.classList.add('hidden');
+            }
+
+            if (tabId === 'add') {
+                loadCategoriesSelect();
+            }
+            if (tabId === 'list') renderCredentialsList();
+            if (tabId === 'categories') renderCategoriesView();
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        /* ==========================================================================
+           6. IndexedDB Credential & Category Operations
+           ========================================================================== */
+        function loadCategoriesSelect(targetSelectId = 'entryCategory', selectedCategory = null) {
+            return new Promise((resolve) => {
+                const select = document.getElementById(targetSelectId);
+                if (!select || !db) {
+                    resolve();
+                    return;
+                }
+
+                const tx = db.transaction('categories', 'readonly');
+                const store = tx.objectStore('categories');
+                const req = store.getAll();
+
+                req.onsuccess = () => {
+                    const list = req.result || [];
+                    const categories = list.length > 0 ? list.map(c => c.name) : defaultCategories.map(c => c.name);
+                    
+                    select.innerHTML = categories.map(cat => `
+                        <option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>
+                    `).join('');
+
+                    if (selectedCategory && categories.includes(selectedCategory)) {
+                        select.value = selectedCategory;
+                    }
+                    resolve();
+                };
+                req.onerror = () => resolve();
+            });
+        }
+
+        function generateUID() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return 'UID-' + crypto.randomUUID().slice(0, 13).toUpperCase();
+            }
+            return 'UID-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 7).toUpperCase();
+        }
+
+        async function saveCredential(e) {
+            e.preventDefault();
+
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => saveCredential(e));
+                return;
+            }
+
+            const idVal = document.getElementById('entryKey').value;
+            const existingUid = document.getElementById('entryUid').value;
+            const existingCreatedAt = document.getElementById('entryCreatedAt').value;
+            
+            const title = document.getElementById('entryTitle').value;
+            const username = document.getElementById('entryUsername').value;
+            const password = document.getElementById('entryPassword').value;
+            const category = document.getElementById('entryCategory').value || 'Personal';
+            const url = document.getElementById('entryUrl').value;
+            const notes = document.getElementById('entryNotes').value;
+
+            const assignedUid = existingUid || generateUID();
+            const nowUtcIso = new Date().toISOString();
+            const createdAtUtc = existingCreatedAt || nowUtcIso;
+            const updatedAtUtc = nowUtcIso;
+
+            const encryptedPassword = await encryptText(password, masterCryptoKey);
+            const encryptedNotes = notes ? await encryptText(notes, masterCryptoKey) : null;
+
+            const credentialRecord = {
+                uid: assignedUid,
+                title,
+                username,
+                password: encryptedPassword,
+                category,
+                url,
+                notes: encryptedNotes,
+                created_at: createdAtUtc,
+                updated_at: updatedAtUtc
+            };
+
+            const tx = db.transaction('credentials', 'readwrite');
+            const store = tx.objectStore('credentials');
+
+            if (idVal) {
+                credentialRecord.id = Number(idVal);
+                store.put(credentialRecord);
+            } else {
+                store.add(credentialRecord);
+            }
+
+            tx.oncomplete = () => {
+                showToast(idVal ? "Credential Updated" : "Credential Saved");
+                resetForm();
+                switchTab('list');
+            };
+        }
+
+        async function renderCredentialsList() {
+            const container = document.getElementById('credentialsList');
+            const emptyState = document.getElementById('emptyVaultState');
+            const countTag = document.getElementById('vaultCountTag');
+
+            const tx = db.transaction(['credentials', 'categories'], 'readonly');
+            const credStore = tx.objectStore('credentials');
+            const catStore = tx.objectStore('categories');
+
+            const credReq = credStore.getAll();
+            const catReq = catStore.getAll();
+
+            credReq.onsuccess = async () => {
+                catReq.onsuccess = async () => {
+                    let items = credReq.result || [];
+                    const categoriesList = catReq.result || [];
+
+                    // Automatically sort entry list by updated_at or title
+                    items.sort((a, b) => {
+                        const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                        const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                        if (timeB !== timeA) return timeB - timeA;
+                        return (a.title || '').localeCompare(b.title || '');
+                    });
+
+                    renderCategoryPills(items, categoriesList);
+
+                    if (activeCategoryFilter !== 'All') {
+                        items = items.filter(item => item.category === activeCategoryFilter);
+                    }
+
+                    if (searchQuery) {
+                        const q = searchQuery.toLowerCase();
+                        items = items.filter(item => 
+                            item.title.toLowerCase().includes(q) || 
+                            item.username.toLowerCase().includes(q) ||
+                            item.category.toLowerCase().includes(q)
+                        );
+                    }
+
+                    countTag.textContent = `${items.length} items`;
+
+                    if (items.length === 0) {
+                        container.innerHTML = '';
+                        emptyState.classList.remove('hidden');
+                        return;
+                    }
+                    emptyState.classList.add('hidden');
+
+                    let html = '';
+                    for (const item of items) {
+                        const decPassword = masterCryptoKey ? await decryptText(item.password, masterCryptoKey) : '••••••••';
+                        const decNotes = (item.notes && masterCryptoKey) ? await decryptText(item.notes, masterCryptoKey) : '';
+                        const displayUid = item.uid || `UID-${item.id}`;
+                        const displayTime = item.updated_at ? item.updated_at.replace('T', ' ').substring(0, 19) + ' UTC' : (item.updated_at || '');
+
+                        html += `
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 transition-all hover:border-slate-300 dark:hover:border-slate-700 shadow-sm dark:shadow-none">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center gap-3 overflow-hidden">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                                            ${item.title.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div class="truncate">
+                                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white truncate">${escapeHtml(item.title)}</h3>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escapeHtml(item.username)}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-1 shrink-0">
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                            ${escapeHtml(item.category)}
+                                        </span>
+                                        <span class="font-mono text-[9px] text-slate-400 dark:text-slate-500 select-all" title="Unique ID">
+                                            ${escapeHtml(displayUid)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="handleCopyPassword('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20 transition flex items-center gap-1">
+                                            <i class="fa-regular fa-copy"></i> Copy Pass
+                                        </button>
+                                        <button onclick="copyToClipboard('${escapeHtml(item.username)}', 'Username')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition flex items-center gap-1">
+                                            <i class="fa-regular fa-user"></i> User
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center gap-1">
+                                        ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>` : ''}
+                                        <button onclick="editCredential(${item.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                        <button onclick="deleteCredential(${item.id})" class="p-1.5 rounded-lg text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"><i class="fa-solid fa-trash text-xs"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                                    <span>Updated: ${escapeHtml(displayTime)}</span>
+                                </div>
+                                ${decNotes ? `<p class="mt-2 text-[11px] text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800/40">${escapeHtml(decNotes)}</p>` : ''}
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                };
+            };
+        }
+
+        async function handleCopyPassword(id) {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => handleCopyPassword(id));
+                return;
+            }
+            const tx = db.transaction('credentials', 'readonly');
+            const req = tx.objectStore('credentials').get(Number(id));
+            req.onsuccess = async () => {
+                const item = req.result;
+                if (!item) return;
+                const dec = await decryptText(item.password, masterCryptoKey);
+                if (dec) copyToClipboard(dec, "Password");
+            };
+        }
+
+        async function editCredential(id) {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => editCredential(id));
+                return;
+            }
+
+            const tx = db.transaction('credentials', 'readonly');
+            const req = tx.objectStore('credentials').get(id);
+
+            req.onsuccess = async () => {
+                const item = req.result;
+                if (!item) return;
+
+                // Load available categories select options in modal first, then set category value
+                await loadCategoriesSelect('modalEntryCategory', item.category);
+
+                const itemUid = item.uid || `UID-${item.id}`;
+                const itemCreatedAt = item.created_at || new Date().toISOString();
+
+                document.getElementById('modalEntryKey').value = item.id;
+                document.getElementById('modalEntryCreatedAt').value = itemCreatedAt;
+                document.getElementById('modalUidText').textContent = itemUid;
+
+                document.getElementById('modalEntryTitle').value = item.title;
+                document.getElementById('modalEntryUsername').value = item.username;
+                document.getElementById('modalEntryUrl').value = item.url || '';
+
+                const decPassword = await decryptText(item.password, masterCryptoKey);
+                document.getElementById('modalEntryPassword').value = decPassword || '';
+
+                if (item.notes) {
+                    const decNotes = await decryptText(item.notes, masterCryptoKey);
+                    document.getElementById('modalEntryNotes').value = decNotes || '';
+                } else {
+                    document.getElementById('modalEntryNotes').value = '';
+                }
+
+                document.getElementById('editCredentialModal').classList.remove('hidden');
+            };
+        }
+
+        function closeEditModal() {
+            document.getElementById('editCredentialModal').classList.add('hidden');
+            document.getElementById('editCredentialForm').reset();
+        }
+
+        async function saveEditedCredential(e) {
+            e.preventDefault();
+
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => saveEditedCredential(e));
+                return;
+            }
+
+            const idVal = document.getElementById('modalEntryKey').value;
+            const createdAtVal = document.getElementById('modalEntryCreatedAt').value;
+            const uidVal = document.getElementById('modalUidText').textContent;
+
+            const title = document.getElementById('modalEntryTitle').value;
+            const username = document.getElementById('modalEntryUsername').value;
+            const password = document.getElementById('modalEntryPassword').value;
+            const category = document.getElementById('modalEntryCategory').value || 'Personal';
+            const url = document.getElementById('modalEntryUrl').value;
+            const notes = document.getElementById('modalEntryNotes').value;
+
+            const nowUtcIso = new Date().toISOString();
+
+            const encryptedPassword = await encryptText(password, masterCryptoKey);
+            const encryptedNotes = notes ? await encryptText(notes, masterCryptoKey) : null;
+
+            const credentialRecord = {
+                id: Number(idVal),
+                uid: uidVal,
+                title,
+                username,
+                password: encryptedPassword,
+                category,
+                url,
+                notes: encryptedNotes,
+                created_at: createdAtVal || nowUtcIso,
+                updated_at: nowUtcIso
+            };
+
+            const tx = db.transaction('credentials', 'readwrite');
+            const store = tx.objectStore('credentials');
+            store.put(credentialRecord);
+
+            tx.oncomplete = () => {
+                showToast("Credential Updated");
+                closeEditModal();
+                renderCredentialsList();
+            };
+        }
+
+        function deleteCredential(id) {
+            if (!confirm('Are you sure you want to delete this credential?')) return;
+            const tx = db.transaction('credentials', 'readwrite');
+            tx.objectStore('credentials').delete(id);
+            tx.oncomplete = () => {
+                showToast("Credential deleted");
+                renderCredentialsList();
+            };
+        }
+
+        function resetForm() {
+            document.getElementById('credentialForm').reset();
+            document.getElementById('entryKey').value = '';
+            document.getElementById('entryUid').value = '';
+            document.getElementById('entryCreatedAt').value = '';
+            document.getElementById('uidDisplayGroup').classList.add('hidden');
+            document.getElementById('formTitle').textContent = 'Add New Credential';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           7. Category Management & Interactive Icon Picker
+           ========================================================================== */
+        function selectCategoryIcon(iconName, btnElem) {
+            document.getElementById('selectedCategoryIcon').value = iconName;
+            document.getElementById('liveIconPreview').className = `fa-solid ${iconName}`;
+            document.getElementById('selectedIconNameText').textContent = iconName;
+
+            document.querySelectorAll('.icon-option-btn').forEach(b => {
+                b.className = "icon-option-btn p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base transition hover:bg-slate-300 dark:hover:bg-slate-700";
+            });
+            btnElem.className = "icon-option-btn p-2 rounded-xl bg-blue-600 text-white flex items-center justify-center text-base transition hover:bg-blue-500";
+        }
+
+        function renderCategoryPills(credentials = [], categories = []) {
+            const container = document.getElementById('categoryFilterContainer');
+            if (!container) return;
+
+            const activeCategoryNames = new Set(credentials.map(c => c.category));
+            const filteredCategories = categories.filter(cat => activeCategoryNames.has(cat.name));
+            const allCategories = ['All', ...filteredCategories.map(c => c.name)];
+
+            if (activeCategoryFilter !== 'All' && !activeCategoryNames.has(activeCategoryFilter)) {
+                activeCategoryFilter = 'All';
+            }
+
+            container.innerHTML = allCategories.map(cat => {
+                const foundCat = categories.find(c => c.name === cat);
+                const iconClass = foundCat && foundCat.icon ? foundCat.icon : 'fa-folder';
+                const isAll = cat === 'All';
+
+                return `
+                    <button onclick="setCategoryFilter('${escapeHtml(cat)}')" 
+                        class="px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition flex items-center gap-1.5 ${activeCategoryFilter === cat ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">
+                        <i class="fa-solid ${isAll ? 'fa-list' : iconClass}"></i>
+                        <span>${escapeHtml(cat)}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function setCategoryFilter(cat) {
+            activeCategoryFilter = cat;
+            renderCredentialsList();
+        }
+
+        function renderCategoriesView() {
+            const container = document.getElementById('categoriesList');
+            const catTx = db.transaction('categories', 'readonly');
+            const credTx = db.transaction('credentials', 'readonly');
+
+            const catReq = catTx.objectStore('categories').getAll();
+            const credReq = credTx.objectStore('credentials').getAll();
+
+            catReq.onsuccess = () => {
+                credReq.onsuccess = () => {
+                    const categories = catReq.result || [];
+                    const credentials = credReq.result || [];
+
+                    container.innerHTML = categories.map(cat => {
+                        const count = credentials.filter(c => c.category === cat.name).length;
+                        const iconName = cat.icon || 'fa-folder';
+                        const isDefault = defaultCategories.some(d => d.name === cat.name);
+
+                        return `
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow-sm dark:shadow-none">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm border border-blue-500/20">
+                                        <i class="fa-solid ${escapeHtml(iconName)}"></i>
+                                    </div>
+                                    <span class="text-sm font-medium text-slate-900 dark:text-white">${escapeHtml(cat.name)}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700/50">${count} passwords</span>
+                                    ${!isDefault ? `
+                                        <button onclick="deleteCategory('${escapeHtml(cat.name)}')" class="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-1">
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+            };
+        }
+
+        function addCategory(e) {
+            e.preventDefault();
+            const input = document.getElementById('newCategoryInput');
+            const iconInput = document.getElementById('selectedCategoryIcon');
+            const val = input.value.trim();
+            const iconVal = iconInput.value || 'fa-folder';
+
+            if (!val) return;
+
+            const tx = db.transaction('categories', 'readwrite');
+            tx.objectStore('categories').put({ name: val, icon: iconVal });
+
+            tx.oncomplete = () => {
+                input.value = '';
+                showToast("Category Added");
+                loadCategoriesSelect();
+                renderCredentialsList();
+                renderCategoriesView();
+            };
+        }
+
+        function deleteCategory(catName) {
+            if (!confirm(`Delete category "${catName}"?`)) return;
+            const tx = db.transaction('categories', 'readwrite');
+            tx.objectStore('categories').delete(catName);
+            tx.oncomplete = () => {
+                showToast("Category Removed");
+                loadCategoriesSelect();
+                renderCredentialsList();
+                renderCategoriesView();
+            };
+        }
+
+        /* ==========================================================================
+           8. Search & Generator Tools
+           ========================================================================== */
+        function handleSearch(val) {
+            searchQuery = val.trim();
+            document.getElementById('clearSearchBtn').classList.toggle('hidden', searchQuery === '');
+            renderCredentialsList();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            handleSearch('');
+        }
+
+        function openGeneratorModal() {
+            document.getElementById('generatorModal').classList.remove('hidden');
+            updateGenerator();
+        }
+
+        function closeGeneratorModal() {
+            document.getElementById('generatorModal').classList.add('hidden');
+        }
+
+        function updateGenerator() {
+            const length = document.getElementById('genLength').value;
+            document.getElementById('genLengthVal').textContent = length;
+
+            const useUpper = document.getElementById('genUppercase').checked;
+            const useLower = document.getElementById('genLowercase').checked;
+            const useNums = document.getElementById('genNumbers').checked;
+            const useSyms = document.getElementById('genSymbols').checked;
+
+            let chars = '';
+            if (useUpper) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (useLower) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (useNums) chars += '0123456789';
+            if (useSyms) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+            if (!chars) {
+                document.getElementById('genResult').textContent = 'Select at least one option';
+                return;
+            }
+
+            let result = '';
+            const cryptoArray = new Uint32Array(length);
+            crypto.getRandomValues(cryptoArray);
+            for (let i = 0; i < length; i++) {
+                result += chars[cryptoArray[i] % chars.length];
+            }
+
+            document.getElementById('genResult').textContent = result;
+        }
+
+        function applyGeneratedPassword() {
+            const gen = document.getElementById('genResult').textContent;
+            if (gen && gen !== 'Select at least one option') {
+                document.getElementById('entryPassword').value = gen;
+                closeGeneratorModal();
+                showToast("Password applied");
+            }
+        }
+
+        function copyGeneratedPassword() {
+            const gen = document.getElementById('genResult').textContent;
+            if (gen) copyToClipboard(gen, "Generated password");
+        }
+
+        /* ==========================================================================
+           9. Robust Import / Export Data Sync Operations
+           ========================================================================== */
+        async function exportVault(mode) {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => exportVault(mode));
+                return;
+            }
+
+            const tx = db.transaction(['credentials', 'categories'], 'readonly');
+            const credStore = tx.objectStore('credentials');
+            const catStore = tx.objectStore('categories');
+
+            const credentials = await new Promise(res => credStore.getAll().onsuccess = e => res(e.target.result || []));
+            const categories = await new Promise(res => catStore.getAll().onsuccess = e => res(e.target.result || []));
+
+            let exportPayload = [];
+
+            if (mode === 'json') {
+                const decryptedItems = [];
+                for (const item of credentials) {
+                    const decPass = await decryptText(item.password, masterCryptoKey);
+                    const decNotes = item.notes ? await decryptText(item.notes, masterCryptoKey) : '';
+                    decryptedItems.push({
+                        uid: item.uid || `UID-${item.id}`,
+                        title: item.title,
+                        username: item.username,
+                        password: decPass || '',
+                        category: item.category,
+                        url: item.url,
+                        notes: decNotes || '',
+                        created_at: item.created_at || new Date().toISOString(),
+                        updated_at: item.updated_at || new Date().toISOString()
+                    });
+                }
+                exportPayload = {
+                    credentials: decryptedItems,
+                    categories: categories
+                };
+            } else {
+                const decryptedItems = [];
+                for (const item of credentials) {
+                    const decPass = await decryptText(item.password, masterCryptoKey);
+                    const decNotes = item.notes ? await decryptText(item.notes, masterCryptoKey) : '';
+                    decryptedItems.push({
+                        uid: item.uid || `UID-${item.id}`,
+                        title: item.title,
+                        username: item.username,
+                        password: decPass || '',
+                        category: item.category,
+                        url: item.url || '',
+                        notes: decNotes || '',
+                        created_at: item.created_at || new Date().toISOString(),
+                        updated_at: item.updated_at || new Date().toISOString()
+                    });
+                }
+
+                const rawDataStr = JSON.stringify({ credentials: decryptedItems, categories });
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const backupPass = prompt("Enter a password to encrypt this backup file:") || "";
+                if (!backupPass) {
+                    showToast("Export cancelled - Password required");
+                    return;
+                }
+
+                const fileKey = await deriveVaultKey(backupPass, salt);
+                const encObj = await encryptText(rawDataStr, fileKey);
+                exportPayload = {
+                    encrypted: true,
+                    salt: Array.from(salt),
+                    iv: encObj.iv,
+                    ciphertext: encObj.ciphertext
+                };
+            }
+
+            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vault-backup-${mode}-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Vault Exported");
+        }
+
+        function importVault(e) {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => importVault(e));
+                return;
+            }
+
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    const dataList = extractDataArrayFromSchema(parsed);
+                    const categoriesList = parsed.categories || [];
+
+                    await processImportArray(dataList, categoriesList, null);
+                    showToast(`${dataList.length} Items Imported Successfully`);
+                    e.target.value = '';
+                } catch (err) {
+                    alert("Import failed: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function triggerEncryptedJsonImport(e) {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => triggerEncryptedJsonImport(e));
+                return;
+            }
+
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    pendingImportData = parsed;
+                    pendingImportKey = null;
+                    
+                    document.getElementById('importFilePass').value = '';
+                    document.getElementById('importDecryptError').classList.add('hidden');
+                    document.getElementById('importDecryptModal').classList.remove('hidden');
+                } catch (err) {
+                    alert("Invalid JSON file format.");
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function closeImportDecryptModal() {
+            document.getElementById('importDecryptModal').classList.add('hidden');
+            pendingImportData = null;
+            pendingImportKey = null;
+        }
+
+        function extractDataArrayFromSchema(parsed) {
+            if (!parsed) return [];
+            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed.credentials)) return parsed.credentials;
+            if (Array.isArray(parsed.items)) return parsed.items;
+            if (Array.isArray(parsed.data)) return parsed.data;
+            if (Array.isArray(parsed.vault)) return parsed.vault;
+            return [];
+        }
+
+        async function confirmEncryptedImport(e) {
+            e.preventDefault();
+            const filePass = document.getElementById('importFilePass').value;
+            const errElem = document.getElementById('importDecryptError');
+            errElem.classList.add('hidden');
+
+            if (!pendingImportData) {
+                closeImportDecryptModal();
+                return;
+            }
+
+            try {
+                let decryptedList = [];
+                let categoriesList = [];
+
+                if (pendingImportData.encrypted || (pendingImportData.ciphertext !== undefined && (pendingImportData.salt !== undefined || pendingImportData.iv !== undefined))) {
+                    const salt = parseToUint8Array(pendingImportData.salt);
+                    const fileKey = await deriveVaultKey(filePass, salt);
+                    const rawString = await decryptText(pendingImportData, fileKey);
+
+                    if (!rawString) throw new Error("Incorrect backup password or corrupted ciphertext.");
+                    const innerParsed = JSON.parse(rawString);
+                    decryptedList = extractDataArrayFromSchema(innerParsed);
+                    categoriesList = innerParsed.categories || [];
+                    pendingImportKey = fileKey;
+                } else {
+                    const rawList = extractDataArrayFromSchema(pendingImportData);
+                    decryptedList = rawList;
+                    categoriesList = pendingImportData.categories || [];
+                    const itemSalt = rawList[0]?.salt || rawList[0]?.password?.salt || pendingImportData.salt || new Uint8Array(16);
+                    pendingImportKey = await deriveVaultKey(filePass, itemSalt);
+                }
+
+                if (!decryptedList || decryptedList.length === 0) {
+                    throw new Error("Zero credentials extracted from backup file.");
+                }
+
+                await processImportArray(decryptedList, categoriesList, pendingImportKey);
+                closeImportDecryptModal();
+                showToast(`${decryptedList.length} Credentials Restored Successfully`);
+            } catch (err) {
+                errElem.textContent = err.message || "Failed to decrypt backup.";
+                errElem.classList.remove('hidden');
+            }
+        }
+
+        async function processImportArray(dataList, categoriesList = [], backupKey = null) {
+            if (!dataList || !Array.isArray(dataList)) return;
+
+            const catTx = db.transaction('categories', 'readwrite');
+            const catStore = catTx.objectStore('categories');
+            
+            if (categoriesList && categoriesList.length > 0) {
+                categoriesList.forEach(cat => {
+                    catStore.put({ name: cat.name, icon: cat.icon || 'fa-folder' });
+                });
+            } else {
+                const importedCategories = [...new Set(dataList.map(i => i.category || 'Personal'))];
+                importedCategories.forEach(cat => catStore.put({ name: cat, icon: 'fa-folder' }));
+            }
+
+            await new Promise((resolve) => {
+                catTx.oncomplete = () => resolve();
+            });
+
+            const existingTx = db.transaction('credentials', 'readonly');
+            const existingStore = existingTx.objectStore('credentials');
+            const existingRecords = await new Promise((resolve) => {
+                const req = existingStore.getAll();
+                req.onsuccess = (e) => resolve(e.target.result || []);
+                req.onerror = () => resolve([]);
+            });
+
+            const processedIncoming = [];
+            for (const item of dataList) {
+                if (!item) continue;
+
+                const title = item.title || item.name || item.service || 'Untitled';
+                const username = item.username || item.user || item.email || item.account || '';
+                const itemUid = item.uid || generateUID();
+                const itemCreatedAt = item.created_at || new Date().toISOString();
+                const itemUpdatedAt = item.updated_at || new Date().toISOString();
+
+                let rawPassword = item.password !== undefined ? item.password : (item.pass !== undefined ? item.pass : (item.pwd !== undefined ? item.pwd : item.secret));
+                let rawNotes = item.notes !== undefined ? item.notes : (item.note !== undefined ? item.note : null);
+
+                async function resolvePlaintext(val, keyToUse) {
+                    if (val === null || val === undefined) return '';
+                    if (typeof val === 'string') return val;
+                    if (typeof val === 'object') {
+                        if (keyToUse) {
+                            const dec1 = await decryptText(val, keyToUse);
+                            if (dec1 !== null) return dec1;
+                        }
+                        if (masterCryptoKey) {
+                            const dec2 = await decryptText(val, masterCryptoKey);
+                            if (dec2 !== null) return dec2;
+                        }
+                    }
+                    return '';
+                }
+
+                let plainPassword = await resolvePlaintext(rawPassword, backupKey);
+                let plainNotes = await resolvePlaintext(rawNotes, backupKey);
+
+                const encPass = await encryptText(plainPassword, masterCryptoKey);
+                const encNotes = plainNotes ? await encryptText(plainNotes, masterCryptoKey) : null;
+
+                processedIncoming.push({
+                    uid: itemUid,
+                    title: title,
+                    username: username,
+                    password: encPass,
+                    category: item.category || 'Personal',
+                    url: item.url || item.website || '',
+                    notes: encNotes,
+                    created_at: itemCreatedAt,
+                    updated_at: itemUpdatedAt
+                });
+            }
+
+            const uidToBestRecord = new Map();
+            existingRecords.forEach(rec => {
+                if (rec.uid) uidToBestRecord.set(rec.uid, rec);
+            });
+
+            processedIncoming.forEach(inc => {
+                if (!uidToBestRecord.has(inc.uid)) {
+                    uidToBestRecord.set(inc.uid, inc);
+                } else {
+                    const existing = uidToBestRecord.get(inc.uid);
+                    const existingTime = new Date(existing.updated_at || 0).getTime();
+                    const incomingTime = new Date(inc.updated_at || 0).getTime();
+
+                    if (incomingTime >= existingTime) {
+                        if (existing.id !== undefined) {
+                            inc.id = existing.id;
+                        }
+                        uidToBestRecord.set(inc.uid, inc);
+                    }
+                }
+            });
+
+            const writeTx = db.transaction('credentials', 'readwrite');
+            const writeStore = writeTx.objectStore('credentials');
+
+            const writePromises = Array.from(uidToBestRecord.values()).map(record => {
+                return new Promise((res) => {
+                    const req = record.id !== undefined ? writeStore.put(record) : writeStore.add(record);
+                    req.onsuccess = () => res();
+                    req.onerror = () => res();
+                });
+            });
+
+            await Promise.all(writePromises);
+
+            return new Promise((resolve) => {
+                writeTx.oncomplete = () => {
+                    loadCategoriesSelect();
+                    renderCredentialsList();
+                    resolve();
+                };
+            });
+        }
+
+        function clearAllVaultData() {
+            if (!confirm("DANGER: This will permanently erase all local password entries and your authentication configuration! Continue?")) return;
+            indexedDB.deleteDatabase(DB_NAME);
+            location.reload();
+        }
+
+        /* ==========================================================================
+           10. Helpers & Toast Notifications
+           ========================================================================== */
+        function copyToClipboard(text, label) {
+            if (!text) return;
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`${label} copied to clipboard`);
+            } catch (err) {
+                showToast(`Failed to copy ${label}`);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const msgElem = document.getElementById('toastMsg');
+            msgElem.textContent = msg;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
