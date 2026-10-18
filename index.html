@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full bg-slate-50">
 <head>
 
     <!-- Tests app icon -->
@@ -60,27 +60,36 @@
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
-        /* Mobile safe area padding for notch & home indicator */
-        .pt-safe {
-            padding-top: max(1rem, env(safe-area-inset-top));
+        
+        /* Smooth tab transitions */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
         }
+        
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Safe area padding for mobile notches / home indicators */
         .pb-safe {
-            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom, 16px);
         }
-        .mb-safe-bottom {
-            margin-bottom: env(safe-area-inset-bottom);
+        .pt-safe {
+            padding-top: env(safe-area-inset-top, 16px);
         }
-        /* Custom scrollbars */
+
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
+            background: #cbd5e1;
             border-radius: 4px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #334155;
         }
     </style>
 </head>
