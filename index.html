@@ -29,7 +29,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#fcfcfc">
+    <meta name="theme-color" content="#0f172a">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -60,6 +60,19 @@
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        /* Smooth tab transitions */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+            opacity: 1;
         }
         /* Mobile safe area padding for notch & home indicator */
         .pt-safe {
@@ -68,16 +81,13 @@
         .pb-safe {
             padding-bottom: env(safe-area-inset-bottom, 16px);
         }
-        /* Custom scrollbars */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
+            background: #cbd5e1;
             border-radius: 4px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #334155;
         }
     </style>
 </head>
@@ -641,8 +651,8 @@
             short_name: "Vault",
             start_url: "./",
             display: "standalone",
-            background_color: "#fcfcfc",
-            theme_color: "#fcfcfc",
+            background_color: "#020617",
+            theme_color: "#0f172a",
             icons: [{
                 src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232563eb'/><path fill='%23ffffff' d='M256 48a208 208 0 1 0 208 208 A208 208 0 0 0 256 48zm0 112a48 48 0 1 1 -48 48 48 48 0 0 1 48-48zm48 208H208v-32h96z'/></svg>",
                 sizes: "512x512",
