@@ -1711,11 +1711,10 @@
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: GOOGLE_SCOPES,
-                    prompt: 'select_account',
                     callback: async (resp) => {
                         if (resp.error !== undefined) {
                             console.error('Google Auth Error:', resp);
-                            throw resp;
+                            return;
                         }
                         gapi.client.setToken(resp);
                         await dbPut('settings', { key: 'gdrive_token', value: resp });
@@ -1737,8 +1736,12 @@
             }
         }
 
+        // Direct synchronous trigger for iOS WebKit PWA popup compliance
         function handleAuthClick() {
-            if (!tokenClient) return;
+            if (!tokenClient) {
+                showToast("Google Auth not initialized yet");
+                return;
+            }
             const token = gapi.client.getToken();
             if (token === null || !token.access_token) {
                 tokenClient.requestAccessToken({ prompt: 'consent' });
