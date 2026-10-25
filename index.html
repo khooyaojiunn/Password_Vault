@@ -311,7 +311,7 @@
         </header>
 
         <!-- MAIN DYNAMIC CONTENT AREA -->
-        <main id="contentArea" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
+        <main id="contentArea" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32">
             
             <!-- TAB 1: ADD / EDIT -->
             <section id="tab-add" class="tab-content hidden max-w-lg mx-auto pb-12">
@@ -504,23 +504,25 @@
                     </div>
 
                     <!-- Cloud Sync Actions -->
-                    <div id="cloudActionButtons" class="space-y-2 pt-1 hidden">
+                    <div id="cloudActionButtons" class="space-y-2 pt-1 opacity-0 pointer-events-none h-0 overflow-hidden transition-all duration-300">
                         <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Google Drive Backup</p>
+                        <!-- Google Drive Backup Buttons -->
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="backupToGoogleDrive('json')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-code"></i> JSON Backup
+                            <button onclick="backupToGoogleDrive('json')" class="min-w-0 truncate bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 px-2 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-code shrink-0"></i> <span class="truncate">JSON Backup</span>
                             </button>
-                            <button onclick="backupToGoogleDrive('encrypted')" class="bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-lock"></i> Encrypted Backup
+                            <button onclick="backupToGoogleDrive('encrypted')" class="min-w-0 truncate bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 px-2 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-lock shrink-0"></i> <span class="truncate">Encrypted Backup</span>
                             </button>
                         </div>
+
                         <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Google Drive Restore</p>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="restoreFromGoogleDrive('json')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-code"></i> Restore JSON
+                            <button onclick="restoreFromGoogleDrive('json')" class="min-w-0 truncate bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 px-2 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-code shrink-0"></i> <span class="truncate">Restore JSON</span>
                             </button>
-                            <button onclick="restoreFromGoogleDrive('encrypted')" class="bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-file-shield"></i> Restore Encrypted
+                            <button onclick="restoreFromGoogleDrive('encrypted')" class="min-w-0 truncate bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 px-2 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-file-shield shrink-0"></i> <span class="truncate">Restore Encrypted</span>
                             </button>
                         </div>
                     </div>
@@ -1752,14 +1754,20 @@
                 btn.innerText = "Disconnect";
                 btn.className = "px-3 py-1.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-200 dark:hover:bg-rose-900/40 transition";
                 btn.setAttribute('onclick', 'disconnectGoogleDrive()');
-                actions.classList.remove('hidden');
+        
+                // Smooth show for iOS
+                actions.classList.remove('opacity-0', 'pointer-events-none', 'h-0');
+                actions.classList.add('opacity-100', 'h-auto');
             } else {
                 dot.className = "w-2.5 h-2.5 rounded-full bg-slate-400 inline-block";
                 text.innerText = "Disconnected from Google Drive";
                 btn.innerText = "Connect Drive";
                 btn.className = "px-3 py-1.5 bg-slate-900 dark:bg-slate-800 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-700 transition";
                 btn.setAttribute('onclick', 'handleAuthClick()');
-                actions.classList.add('hidden');
+        
+                // Smooth hide for iOS
+                actions.classList.remove('opacity-100', 'h-auto');
+                actions.classList.add('opacity-0', 'pointer-events-none', 'h-0');
             }
         }
 
