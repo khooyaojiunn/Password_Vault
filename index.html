@@ -493,10 +493,10 @@
                     <i class="fa-brands fa-google-drive text-2xl"></i>
                     <div>
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Google Drive Cloud Sync</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Backup and restore your vault using Google Drive with standard JSON or Encrypted File formats.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Sync your vault directly with Google Drive with two-way merge restore & backup.</p>
                     </div>
                 </div>
-
+            
                 <!-- Connection Status Badge -->
                 <div id="syncStatusCard" class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                     <div class="flex items-center space-x-2">
@@ -507,27 +507,13 @@
                         Connect Drive
                     </button>
                 </div>
-
-                <!-- Cloud Sync Actions -->
-                <div id="cloudActionButtons" class="space-y-2 pt-1 hidden">
-                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Google Drive Backup</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="backupToGoogleDrive('json')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-code"></i> JSON Backup
-                        </button>
-                        <button onclick="backupToGoogleDrive('encrypted')" class="bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-lock"></i> Encrypted Backup
-                        </button>
-                    </div>
-                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Google Drive Restore</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="restoreFromGoogleDrive('json')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2.5 text-xs text-slate-800 dark:text-slate-200 font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-code"></i> Restore JSON
-                        </button>
-                        <button onclick="restoreFromGoogleDrive('encrypted')" class="bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 border border-blue-500/30 rounded-xl py-2.5 text-xs text-blue-600 dark:text-blue-300 font-medium transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-file-shield"></i> Restore Encrypted
-                        </button>
-                    </div>
+            
+                <!-- Replaced Backup/Restore buttons with single Sync Button -->
+                <div id="cloudActionButtons" class="pt-1 hidden">
+                    <button onclick="startCloudSync()" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 text-xs">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                        <span>Sync Vault Data</span>
+                    </button>
                 </div>
             </div>
 
@@ -2289,6 +2275,184 @@
         }
 
         /* ==========================================================================
+           New Combined 2-Way Cloud Sync Workflow (Drawer Progress)
+           ========================================================================== */
+        function openSyncDrawer() {
+            const drawer = document.getElementById('syncProgressDrawer');
+            document.getElementById('syncProgressBar').style.width = '0%';
+            document.getElementById('syncSpinnerIcon').classList.add('animate-spin');
+            document.getElementById('closeSyncDrawerBtn').classList.add('hidden');
+            document.getElementById('finishSyncBtn').classList.add('hidden');
+            
+            resetSyncStepUI('syncStep1', '1. Connecting to Google Drive');
+            resetSyncStepUI('syncStep2', '2. Fetching & Merging Remote Data (Restore)');
+            resetSyncStepUI('syncStep3', '3. Uploading Updated Vault (Backup)');
+            
+            document.getElementById('syncStatusLogText').textContent = 'Initializing cloud handshake...';
+            drawer.classList.remove('hidden');
+        }
+        
+        function resetSyncStepUI(elemId, titleText) {
+            const el = document.getElementById(elemId);
+            el.className = "flex items-center justify-between text-slate-400";
+            el.querySelector('span:first-child').innerHTML = `<i class="fa-regular fa-circle"></i> ${titleText}`;
+            el.querySelector('.status-badge').textContent = 'Pending';
+            el.querySelector('.status-badge').className = 'status-badge font-mono text-[10px] text-slate-400';
+        }
+        
+        function updateSyncStepUI(elemId, titleText, state) {
+            const el = document.getElementById(elemId);
+            const badge = el.querySelector('.status-badge');
+            const iconSpan = el.querySelector('span:first-child');
+        
+            if (state === 'active') {
+                el.className = "flex items-center justify-between text-blue-600 dark:text-blue-400 font-medium";
+                iconSpan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${titleText}`;
+                badge.textContent = 'In Progress';
+                badge.className = 'status-badge font-mono text-[10px] text-blue-500';
+            } else if (state === 'success') {
+                el.className = "flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-medium";
+                iconSpan.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${titleText}`;
+                badge.textContent = 'Completed';
+                badge.className = 'status-badge font-mono text-[10px] text-emerald-500';
+            } else if (state === 'error') {
+                el.className = "flex items-center justify-between text-red-500 font-medium";
+                iconSpan.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${titleText}`;
+                badge.textContent = 'Failed';
+                badge.className = 'status-badge font-mono text-[10px] text-red-500';
+            }
+        }
+        
+        function closeSyncDrawer() {
+            document.getElementById('syncProgressDrawer').classList.add('hidden');
+        }
+        
+        async function startCloudSync() {
+            if (!masterCryptoKey) {
+                promptVaultUnlock(() => startCloudSync());
+                return;
+            }
+            if (!await ensureValidToken()) return;
+        
+            openSyncDrawer();
+        
+            try {
+                // STEP 1: Connect
+                updateSyncStepUI('syncStep1', '1. Connecting to Google Drive', 'active');
+                document.getElementById('syncProgressBar').style.width = '20%';
+                await new Promise(r => setTimeout(r, 400));
+                updateSyncStepUI('syncStep1', '1. Connecting to Google Drive', 'success');
+                document.getElementById('syncProgressBar').style.width = '35%';
+        
+                // STEP 2: Restore (Download & Merge Remote File)
+                updateSyncStepUI('syncStep2', '2. Fetching & Merging Remote Data (Restore)', 'active');
+                document.getElementById('syncStatusLogText').textContent = 'Searching for remote backup files...';
+        
+                const response = await gapi.client.drive.files.list({
+                    q: `name='${BACKUP_FILENAME}' and 'appDataFolder' in parents`,
+                    spaces: 'appDataFolder',
+                    fields: 'files(id, name)'
+                });
+        
+                const files = response.result.files;
+                if (files && files.length > 0) {
+                    const fileId = files[0].id;
+                    const fileRes = await gapi.client.drive.files.get({
+                        fileId: fileId,
+                        alt: 'media'
+                    });
+        
+                    const backup = typeof fileRes.result === 'string' ? JSON.parse(fileRes.result) : fileRes.result;
+                    const dataList = extractDataArrayFromSchema(backup);
+                    const categoriesList = backup.categories || [];
+        
+                    if (dataList.length > 0) {
+                        document.getElementById('syncStatusLogText').textContent = `Merging ${dataList.length} items from cloud...`;
+                        await processImportArray(dataList, categoriesList, null);
+                    }
+                }
+                
+                updateSyncStepUI('syncStep2', '2. Fetching & Merging Remote Data (Restore)', 'success');
+                document.getElementById('syncProgressBar').style.width = '70%';
+        
+                // STEP 3: Backup (Upload Merged Local State to Drive)
+                updateSyncStepUI('syncStep3', '3. Uploading Updated Vault (Backup)', 'active');
+                document.getElementById('syncStatusLogText').textContent = 'Encrypting local database state...';
+        
+                const tx = db.transaction(['credentials', 'categories'], 'readonly');
+                const credStore = tx.objectStore('credentials');
+                const catStore = tx.objectStore('categories');
+        
+                const credentials = await new Promise(res => credStore.getAll().onsuccess = e => res(e.target.result || []));
+                const categories = await new Promise(res => catStore.getAll().onsuccess = e => res(e.target.result || []));
+        
+                const decryptedItems = [];
+                for (const item of credentials) {
+                    const decPass = await decryptText(item.password, masterCryptoKey);
+                    const decNotes = item.notes ? await decryptText(item.notes, masterCryptoKey) : '';
+                    decryptedItems.push({
+                        uid: item.uid || `UID-${item.id}`,
+                        title: item.title,
+                        username: item.username,
+                        password: decPass || '',
+                        category: item.category,
+                        url: item.url,
+                        notes: decNotes || '',
+                        created_at: item.created_at || new Date().toISOString(),
+                        updated_at: item.updated_at || new Date().toISOString()
+                    });
+                }
+        
+                const exportPayload = {
+                    credentials: decryptedItems,
+                    categories: categories
+                };
+        
+                const file = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+                let fileId = files && files.length > 0 ? files[0].id : null;
+        
+                const metadata = {
+                    name: BACKUP_FILENAME,
+                    mimeType: 'application/json',
+                    parents: fileId ? undefined : ['appDataFolder']
+                };
+        
+                const accessToken = gapi.client.getToken().access_token;
+                let form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                form.append('file', file);
+        
+                const method = fileId ? 'PATCH' : 'POST';
+                const path = fileId ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart` : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+        
+                const uploadRes = await fetch(path, {
+                    method: method,
+                    headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+                    body: form
+                });
+        
+                if (!uploadRes.ok) throw new Error('Upload step failed.');
+        
+                updateSyncStepUI('syncStep3', '3. Uploading Updated Vault (Backup)', 'success');
+                document.getElementById('syncProgressBar').style.width = '100%';
+                document.getElementById('syncStatusLogText').textContent = 'Vault synchronized successfully!';
+                document.getElementById('syncSpinnerIcon').classList.remove('animate-spin');
+        
+                document.getElementById('closeSyncDrawerBtn').classList.remove('hidden');
+                document.getElementById('finishSyncBtn').classList.remove('hidden');
+                showToast("Vault Synchronized");
+        
+            } catch (err) {
+                console.error('Sync Error:', err);
+                document.getElementById('syncSpinnerIcon').classList.remove('animate-spin');
+                document.getElementById('syncStatusLogText').textContent = 'Synchronization aborted due to an error.';
+                document.getElementById('closeSyncDrawerBtn').classList.remove('hidden');
+                document.getElementById('finishSyncBtn').classList.remove('hidden');
+                showToast("Sync failed");
+            }
+        }
+        
+        /* ==========================================================================
            10. Helpers & Toast Notifications
            ========================================================================== */
         function copyToClipboard(text, label) {
@@ -2325,5 +2489,46 @@
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
+
+        <!-- CLOUD SYNC PROGRESS DRAWER MODAL -->
+        <div id="syncProgressDrawer" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center hidden transition-opacity">
+            <div class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-rotate text-blue-500 dark:text-blue-400 animate-spin" id="syncSpinnerIcon"></i> Synchronizing Vault
+                    </h3>
+                    <button id="closeSyncDrawerBtn" onclick="closeSyncDrawer()" class="hidden text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+        
+                <!-- Progress Track -->
+                <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="syncProgressBar" class="bg-blue-600 h-full w-0 transition-all duration-300"></div>
+                </div>
+        
+                <!-- Step List Progress Indicator -->
+                <div class="space-y-2.5 text-xs">
+                    <div id="syncStep1" class="flex items-center justify-between text-slate-400">
+                        <span class="flex items-center gap-2"><i class="fa-regular fa-circle"></i> 1. Connecting to Google Drive</span>
+                        <span class="status-badge font-mono text-[10px]">Pending</span>
+                    </div>
+                    <div id="syncStep2" class="flex items-center justify-between text-slate-400">
+                        <span class="flex items-center gap-2"><i class="fa-regular fa-circle"></i> 2. Fetching & Merging Remote Data (Restore)</span>
+                        <span class="status-badge font-mono text-[10px]">Pending</span>
+                    </div>
+                    <div id="syncStep3" class="flex items-center justify-between text-slate-400">
+                        <span class="flex items-center gap-2"><i class="fa-regular fa-circle"></i> 3. Uploading Updated Vault (Backup)</span>
+                        <span class="status-badge font-mono text-[10px]">Pending</span>
+                    </div>
+                </div>
+        
+                <p id="syncStatusLogText" class="text-[11px] text-slate-500 dark:text-slate-400 italic text-center pt-1">Initializing cloud handshake...</p>
+        
+                <button id="finishSyncBtn" onclick="closeSyncDrawer()" class="hidden w-full bg-slate-900 dark:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs hover:bg-slate-800 dark:hover:bg-slate-700 transition">
+                    Done
+                </button>
+            </div>
+        </div>
 </body>
 </html>
